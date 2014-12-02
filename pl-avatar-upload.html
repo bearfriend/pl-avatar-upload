@@ -1,0 +1,186 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+Element providing solution to no problem in particular.
+
+##### Example
+
+    <pl-avatar-upload></pl-avatar-upload>
+
+@element pl-avatar-upload
+@blurb Element providing solution to no problem in particular.
+@status alpha
+@homepage http://polymerlabs.github.io/pl-avatar-upload
+-->
+<polymer-element name="pl-avatar-upload" attributes="notitle author">
+  
+  <template>
+	
+    <link rel="stylesheet" href="pl-avatar-upload.css" />
+	
+	<input id="input" type="file" on-change="{{ change }}" accept="image/*" />
+	<img id="img" on-down="{{ pan }}" />
+	<input type="range" id="slider" min="0" max="90" value="75" step="any" on-input="{{ drawImg }}">
+	<br />
+	<canvas id="canvas_scaled" on-down="{{ pan }}"></canvas>
+	<canvas style="" id="canvas_square" height="200" width="200"></canvas>
+	<canvas id="canvas"></canvas>
+	
+  </template>
+  
+  <script>
+   
+   (function() {
+
+	 var _ready = function(that) {
+
+	   var self = this;
+	   
+	   var slider = that.$.slider;
+	   var canvas = that.$.canvas;
+	   var canvasSquare = that.$.canvas_square;
+	   var canvasScaled = that.$.canvas_scaled;
+	   var output = that.$.output;
+	   var img2 = that.$.img;
+	   
+	   var width = 200;
+	   var height = 200;
+	   var ratio = height/width;
+	   
+	   //canvasScaled.width = width;
+	   //canvasScaled.height = height;
+	   
+	   var input = that.$.input;
+	   var ctx = canvas.getContext("2d");
+	   var ctxSq = canvasSquare.getContext('2d');
+	   var ctxScaled = canvasScaled.getContext('2d');
+	   var img = new Image();
+	   var fr = new FileReader();
+	   var x = 0;
+	   var y = 0;
+	   
+	   fr.onload = function() {
+	     img.src = fr.result;
+	   };
+	   
+	   img.onload = function() {
+	     var ratio2 = img.height/img.width;
+	     canvas.width = img.width;
+		 while (canvas.width > 2000) {
+		   canvas.width = canvas.width*.5;
+		 }
+	     canvas.height = canvas.width*ratio2;
+		 
+	     ctx.drawImage(img,0,0,canvas.width,canvas.height);
+		 
+	     var maxPx = canvas.width/width < canvas.height/height
+	               ? canvas.width
+	               : 1/ratio*canvas.height;
+	     var minPx = Math.min(width,canvas.width)*.5;
+		 
+	     slider.min = maxPx*-1;
+	     slider.max = minPx*-1;
+	     slider.value = slider.min;
+		 
+	     self.drawImg();
+	   };
+
+	   self.pan = function(e) {
+
+		 document.body.className = "noselect";
+
+		 var mm = function(e) {
+
+		   var val = canvasSquare.width/width;
+		   x = Math.max(Math.min(0,(e.movementX*val)+x),canvasSquare.width-canvas.width);
+		   y = Math.max(Math.min(0,(e.movementY*val)+y),canvasSquare.height-canvas.height);
+		   self.drawImg();
+		 }
+
+		 window.addEventListener('mousemove',mm);
+
+		 window.addEventListener('mouseup',function mu() {
+
+		   document.body.className = "";
+
+		   window.removeEventListener('mousemove',mu);
+		   window.removeEventListener('mousemove',mm);
+		 });
+		 
+	   };
+
+	   self.change = function() {
+		 fr.readAsDataURL(input.files[0]);
+	   };
+
+	   self.drawImg = function() {
+		 
+		 (function() { // clear the canvas. Browser test this for replacement with canvas.width = canvas.width;
+
+		   ctxSq.save();
+		   
+		   // Use the identity matrix while clearing the canvas
+		   ctxSq.setTransform(1, 0, 0, 1, 0, 0);
+		   ctxSq.clearRect(0, 0, canvasSquare.width, canvasSquare.height);
+		   
+		   // Restore the transform
+		   ctxSq.restore();
+		   
+		 })();
+		 
+		 //canvasScaled.width = canvasScaled.width; // clear
+		 
+		 canvasSquare.width = Math.round(slider.value*-1);
+		 canvasSquare.height = canvasSquare.width*ratio;
+		 
+		 var square = ctx.getImageData(x*-1,y*-1,canvasSquare.width,canvasSquare.height);
+		 ctxSq.putImageData(square,0,0);
+
+
+		 var selectedWidth = canvasSquare.width;
+		 var selectedHeight = canvasSquare.height;
+
+		 while (selectedWidth*.5 > width && selectedHeight*.5 > height) {
+		   selectedWidth = selectedWidth*.5;
+		   selectedHeight = selectedHeight*.5;
+		 }
+
+		 canvasScaled.width = selectedWidth;
+		 canvasScaled.height = selectedHeight;
+		 
+		 ctxScaled.drawImage(canvasSquare,0,0,selectedWidth,selectedHeight);
+		 
+		 that.data = canvasScaled.toDataURL('image/jpeg',.8);
+
+		 img2.src = that.data;
+		 
+	   };
+	   
+	 };
+	 
+     Polymer({
+	   /**
+		* The `author` attribute sets an initial author
+		*
+		* @attribute author
+		* @type string
+		* @default 'Daniel Gleckler'
+		*/
+	   get author() { return 'Daniel Gleckler' },
+	   
+	   ready: function() {
+		 // Ready is a lifecycle callback.
+					   // You can do setup work in here.
+					   // More info: http://www.polymer-project.org/docs/polymer/polymer.html#lifecyclemethods
+		 var _edit = new _ready(this);
+		 this.pan = _edit.pan;
+		 this.change = _edit.change;
+		 this.drawImg = _edit.drawImg;
+	   }
+	   
+     });
+   })();
+   
+  </script>
+  
+</polymer-element>

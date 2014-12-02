@@ -1,0 +1,18 @@
+:host {
+  display: block;
+  color: red;
+}
+
+#img {
+	border: 1px solid #ccc;
+	height:200px;
+	width:200px;
+}
+
+
+body.noselect, body.noselect textarea, #img {	
+	-webkit-user-drag: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+}
