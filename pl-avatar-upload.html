@@ -1,4 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-slider/paper-slider.html">
+
 
 <!--
 Element providing solution to no problem in particular.
@@ -17,14 +20,34 @@ Element providing solution to no problem in particular.
   <template>
 	
     <link rel="stylesheet" href="pl-avatar-upload.css" />
-	
-	<input id="input" type="file" on-change="{{ change }}" accept="image/*" />
-	<img id="img" on-down="{{ pan }}" />
-	<input type="range" id="slider" min="0" max="90" value="75" step="any" on-input="{{ drawImg }}">
-	<br />
-	<canvas id="canvas_scaled" on-down="{{ pan }}"></canvas>
-	<canvas style="" id="canvas_square" height="200" width="200"></canvas>
-	<canvas id="canvas"></canvas>
+
+	<div layout horizontal>
+	  <div id="image-container">
+		<img id="img" on-down="{{ pan }}" />
+		<input type="range" id="slider" min="0" max="90" value="75" step="any" on-input="{{ zoom }}">
+		<!--<paper-slider id="slider" min="0" max="90" value="75" step="any" on-input="{{ drawImg }}"></paper-slider>-->
+	  </div>
+	  <div flex center-justified>
+
+		<span>Choose an image to use for your profile</span>
+
+		<div id="drop-zone">Drag and drop an image</div>
+		<div>OR</div>
+		<paper-button>
+		  <span>Select an image from your computer</span>
+		  <input id="input" type="file" on-change="{{ change }}" accept="image/*" />
+		</paper-button>
+		
+		
+	  </div>
+  
+	</div>
+
+	<span hidden>
+	  <canvas id="canvas_scaled" on-down="{{ pan }}"></canvas>
+	  <canvas style="" id="canvas_square" height="200" width="200"></canvas>
+	  <canvas id="canvas"></canvas>
+	</span>
 	
   </template>
   
@@ -56,8 +79,8 @@ Element providing solution to no problem in particular.
 	   var ctxScaled = canvasScaled.getContext('2d');
 	   var img = new Image();
 	   var fr = new FileReader();
-	   var x = 0;
-	   var y = 0;
+	   var x = 0;//width*.5;
+	   var y = 0;//height*.5;
 	   
 	   fr.onload = function() {
 	     img.src = fr.result;
@@ -81,8 +104,13 @@ Element providing solution to no problem in particular.
 	     slider.min = maxPx*-1;
 	     slider.max = minPx*-1;
 	     slider.value = slider.min;
-		 
-	     self.drawImg();
+
+		 x = img.width*-.5//(img.width - maxPx)*-.5;
+		 y = img.height*-.5;
+
+		 // call zoom to recalculate from the slider
+		 // zoom calls drawImg
+		 self.zoom();
 	   };
 
 	   self.pan = function(e) {
@@ -92,8 +120,8 @@ Element providing solution to no problem in particular.
 		 var mm = function(e) {
 
 		   var val = canvasSquare.width/width;
-		   x = Math.max(Math.min(0,(e.movementX*val)+x),canvasSquare.width-canvas.width);
-		   y = Math.max(Math.min(0,(e.movementY*val)+y),canvasSquare.height-canvas.height);
+		   x = Math.max(Math.min(canvasSquare.width*-.5,(e.movementX*val)+x),(canvasSquare.width*.5)-canvas.width);
+		   y = Math.max(Math.min(canvasSquare.height*-.5,(e.movementY*val)+y),(canvasSquare.height*.5)-canvas.height);
 		   self.drawImg();
 		 }
 
@@ -113,6 +141,17 @@ Element providing solution to no problem in particular.
 		 fr.readAsDataURL(input.files[0]);
 	   };
 
+	   self.zoom = function() {
+
+		 canvasSquare.width = Math.round(slider.value*-1);
+		 canvasSquare.height = canvasSquare.width*ratio;
+		 
+		 x = Math.max(Math.min(canvasSquare.width*-.5,x),(canvasSquare.width*.5)-canvas.width);
+		 y = Math.max(Math.min(canvasSquare.height*-.5,y),(canvasSquare.height*.5)-canvas.height);
+
+		 self.drawImg();
+	   };
+	   
 	   self.drawImg = function() {
 		 
 		 (function() { // clear the canvas. Browser test this for replacement with canvas.width = canvas.width;
@@ -130,10 +169,7 @@ Element providing solution to no problem in particular.
 		 
 		 //canvasScaled.width = canvasScaled.width; // clear
 		 
-		 canvasSquare.width = Math.round(slider.value*-1);
-		 canvasSquare.height = canvasSquare.width*ratio;
-		 
-		 var square = ctx.getImageData(x*-1,y*-1,canvasSquare.width,canvasSquare.height);
+		 var square = ctx.getImageData((x*-1)-canvasSquare.width*.5,(y*-1)-canvasSquare.height*.5,canvasSquare.width,canvasSquare.height);
 		 ctxSq.putImageData(square,0,0);
 
 
@@ -174,8 +210,8 @@ Element providing solution to no problem in particular.
 					   // More info: http://www.polymer-project.org/docs/polymer/polymer.html#lifecyclemethods
 		 var _edit = new _ready(this);
 		 this.pan = _edit.pan;
+		 this.zoom = _edit.zoom;
 		 this.change = _edit.change;
-		 this.drawImg = _edit.drawImg;
 	   }
 	   
      });

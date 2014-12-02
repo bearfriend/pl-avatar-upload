@@ -8,9 +8,11 @@
   ],
   "main": "pl-avatar-upload.html",
   "dependencies": {
-    "polymer": "Polymer/polymer#^0.4.0"
+    "polymer": "Polymer/polymer#^0.5.1",
+    "paper-button": "Polymer/paper-button#~0.5.1",
+    "paper-slider": "Polymer/paper-slider#~0.5.1"
   },
   "devDependencies": {
-    "polymer-test-tools": "Polymer/polymer-test-tools#^0.4.0"
+    "polymer-test-tools": "Polymer/web-component-tester#^0.5.1"
   }
 }
