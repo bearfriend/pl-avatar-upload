@@ -2,16 +2,38 @@
   display: block;
 }
 
-#img {
+#image {
 	border: 1px solid #ccc;
-	height:200px;
-	width:200px;
-}
-
-
-body.noselect, body.noselect textarea, #img {	
+	height:280px;
+	width:210px;
 	-webkit-user-drag: none;
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	-ms-user-select: none;
+}
+
+#drop-zone {
+	padding-top: 150px;
+}
+
+.hidden-input-button {
+	line-height: normal;
+}
+
+.hidden-input-container {
+	overflow: hidden;
+	line-height: 0;
+}
+
+.hidden-input {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	bottom: 0px;
+	width: 0px;
+	padding-left: 110%;
+	overflow: hidden;
+	opacity: 0;
+	z-index: 1;
+	cursor: pointer;
 }

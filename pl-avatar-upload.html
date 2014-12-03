@@ -1,6 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-slider/paper-slider.html">
+<link rel="import" href="../core-style/core-style.html">
 
 
 <!--
@@ -15,37 +16,49 @@ Element providing solution to no problem in particular.
 @status alpha
 @homepage http://polymerlabs.github.io/pl-avatar-upload
 -->
-<polymer-element name="pl-avatar-upload" attributes="notitle author">
+
+<style>
+
+ body.noselect,
+ body.noselect textarea {
+   -webkit-user-drag: none;
+   -webkit-user-select: none;
+   -moz-user-select: none;
+   -ms-user-select: none;
+ }
+ 
+</style>
+
+
+<polymer-element name="pl-avatar-upload" attributes="author outputwidth outputheight">
   
   <template>
 	
     <link rel="stylesheet" href="pl-avatar-upload.css" />
-
+	
 	<div layout horizontal>
-	  <div id="image-container">
-		<img id="img" on-down="{{ pan }}" />
-		<input type="range" id="slider" min="0" max="90" value="75" step="any" on-input="{{ zoom }}">
+	  <div id="image-container" layout vertical>
+		<img id="image" on-down="{{ pan }}" />
+		<input type="range" id="slider" min="0" max="90" value="75" step="any" on-input="{{ zoom }}" block />
 		<!--<paper-slider id="slider" min="0" max="90" value="75" step="any" on-input="{{ drawImg }}"></paper-slider>-->
 	  </div>
-	  <div flex center-justified>
+	  <div flex center layout vertical>
 
 		<span>Choose an image to use for your profile</span>
 
 		<div id="drop-zone">Drag and drop an image</div>
 		<div>OR</div>
-		<paper-button>
-		  <span>Select an image from your computer</span>
-		  <input id="input" type="file" on-change="{{ change }}" accept="image/*" />
-		</paper-button>
-		
-		
+		<span class="hidden-input-container" relative>
+		  <input id="input" class="hidden-input" type="file" on-change="{{ change }}" accept="image/*" />
+		  <paper-button tabindex="-1" aria-hidden="true" class="hidden-input-button">Select an image from your computer</paper-button>
+		</span>
 	  </div>
   
 	</div>
 
 	<span hidden>
 	  <canvas id="canvas_scaled" on-down="{{ pan }}"></canvas>
-	  <canvas style="" id="canvas_square" height="200" width="200"></canvas>
+	  <canvas style="" id="canvas_square" height="{{ outputheight }}" width="{{ outputwidth }}"></canvas>
 	  <canvas id="canvas"></canvas>
 	</span>
 	
@@ -64,10 +77,10 @@ Element providing solution to no problem in particular.
 	   var canvasSquare = that.$.canvas_square;
 	   var canvasScaled = that.$.canvas_scaled;
 	   var output = that.$.output;
-	   var img2 = that.$.img;
+	   var img2 = that.$.image;
 	   
-	   var width = 200;
-	   var height = 200;
+	   var width = that.outputwidth;
+	   var height = that.outputheight;
 	   var ratio = height/width;
 	   
 	   //canvasScaled.width = width;
@@ -117,24 +130,50 @@ Element providing solution to no problem in particular.
 
 		 document.body.className = "noselect";
 
+		 var previousX = e.clientX;
+		 var previousY = e.clientY;
+
+		 var posX, posY;
+		 
 		 var mm = function(e) {
 
-		   var val = canvasSquare.width/width;
-		   x = Math.max(Math.min(canvasSquare.width*-.5,(e.movementX*val)+x),(canvasSquare.width*.5)-canvas.width);
-		   y = Math.max(Math.min(canvasSquare.height*-.5,(e.movementY*val)+y),(canvasSquare.height*.5)-canvas.height);
-		   self.drawImg();
+		   // mouse events movement, touch events don't. Calculate for touch.
+		   var movementX = 'movementX' in e ? e.movementX : (posX = Math.round(e.touches[0].clientX))-previousX;
+		   var movementY = 'movementY' in e ? e.movementY : (posY = Math.round(e.touches[0].clientY))-previousY;
+
+		   previousX = posX;
+		   previousY = posY;
+		   
+		   if (movementX || movementY) {
+			 var val = canvasSquare.width/width;
+			 x = Math.max(Math.min(canvasSquare.width*-.5,(movementX*val)+x),(canvasSquare.width*.5)-canvas.width);
+			 y = Math.max(Math.min(canvasSquare.height*-.5,(movementY*val)+y),(canvasSquare.height*.5)-canvas.height);
+			 self.drawImg();
+		   }		   
 		 }
 
-		 window.addEventListener('mousemove',mm);
-
-		 window.addEventListener('mouseup',function mu() {
-
-		   document.body.className = "";
-
-		   window.removeEventListener('mousemove',mu);
-		   window.removeEventListener('mousemove',mm);
-		 });
+		 // touch
+		 window.addEventListener('touchmove',mm);
 		 
+		 window.addEventListener('touchend',function mu() {
+		   document.body.className = "";
+		   
+		   window.removeEventListener('touchend',mu);
+		   window.removeEventListener('touchmove',mm);
+		 });
+
+
+		 // mouse
+		 window.addEventListener('mousemove',mm);
+		 
+		 window.addEventListener('mouseup',function mu() {
+		   document.body.className = "";
+		   
+		   window.removeEventListener('mouseup',mu);
+		   window.removeEventListener('mousemove',mm);
+		   
+		 });
+	   		 
 	   };
 
 	   self.change = function() {
@@ -142,10 +181,11 @@ Element providing solution to no problem in particular.
 	   };
 
 	   self.zoom = function() {
-
+		 
 		 canvasSquare.width = Math.round(slider.value*-1);
 		 canvasSquare.height = canvasSquare.width*ratio;
-		 
+
+		 // don't allow x or y to go outside the image dimensions
 		 x = Math.max(Math.min(canvasSquare.width*-.5,x),(canvasSquare.width*.5)-canvas.width);
 		 y = Math.max(Math.min(canvasSquare.height*-.5,y),(canvasSquare.height*.5)-canvas.height);
 
@@ -186,9 +226,9 @@ Element providing solution to no problem in particular.
 		 
 		 ctxScaled.drawImage(canvasSquare,0,0,selectedWidth,selectedHeight);
 		 
-		 that.data = canvasScaled.toDataURL('image/jpeg',.8);
+		 that.imagedata = canvasScaled.toDataURL('image/jpeg',.8);
 
-		 img2.src = that.data;
+		 img2.src = that.imagedata;
 		 
 	   };
 	   
@@ -203,6 +243,34 @@ Element providing solution to no problem in particular.
 		* @default 'Daniel Gleckler'
 		*/
 	   get author() { return 'Daniel Gleckler' },
+	   set author(v) { return false },
+
+
+	   /**
+		* The `outputwidth` attribute sets the width of the image outputted to the `imagedata` attribute.
+		*
+		* @attribute outputwidth
+		* @type string
+		* @default 210
+		*/
+	   outputwidth: 210,
+
+	   /**
+		* The `outputheight` attribute sets the height of the outputted to the `imagedata attribute.
+		*
+		* @attribute outputheight
+		* @type string
+		* @default 280
+		*/
+	   outputheight: 280,
+
+	   /**
+		* The `imagedata` property returns a data-URL containing a representation of the image in `jpeg` format. The returned image is in a resolution of 96dpi.
+		*
+		* @property imagedata
+		* @type string
+		* @default 280
+		*/
 	   
 	   ready: function() {
 		 // Ready is a lifecycle callback.
@@ -212,6 +280,14 @@ Element providing solution to no problem in particular.
 		 this.pan = _edit.pan;
 		 this.zoom = _edit.zoom;
 		 this.change = _edit.change;
+	   },
+
+	   outputheightChanged: function() {
+		 this.ready();
+	   },
+
+	   outputwidthChanged: function() {
+		 //this.ready();
 	   }
 	   
      });
