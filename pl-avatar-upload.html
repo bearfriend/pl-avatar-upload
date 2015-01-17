@@ -84,70 +84,52 @@ Element providing solution to no problem in particular.
 	   };
 	   
 	   // set up drg and drop
-	   document.addEventListener("dragover", function(e) {
-		 e.preventDefault(); // always do this
-	   }, false);
-	   
-	   document.addEventListener("dragenter", function(e) {
 
+	   self.dragenter = function(e) {
+
+		 /*
 		 e.preventDefault();
-		 
-		 if (!that.hidden) {
 
+		 if (!that.hidden) {
 		   that.dragging = true;
-		   
 		 }
 
 		 if (e.target == that) {
 		   that.dragenter = true;
 		 }
+		 */
 		 
-	   }, false);
-	   document.addEventListener("drop", function(e) {
+	   };
 
-		 e.preventDefault();
+	   document.addEventListener("dragenter", self.dragenter, false);
+	   
+	   self.drop = function(e) {
 
-		 var dt = e.dataTransfer;
-		 var files = dt.files;
-		 var file;
-
-		 /*
-		 files.filter(function(element) {
-
-		   return !!(element.type.match(/^image\//));
+		 if (e.target == that.dropzone) {
+		 
+		   e.preventDefault();
 		   
-		 });
-
-		 switch(files.length) {
-			 case 0:
-
-			// Well, that didn't work. Make sure you choose an image file like a JPG, PNG or GIF.
-				break;
-			 case 1:
-
-			 fr.readAsDataURL(files[0]);
-			 
-			 break;
-		   default:
-			 // Whoa, that's too many files. We'll just use one.
-		 }
-		  */
-
-		 for (var idx = 0; idx < files.length; idx++) {
-		   if (!!(files[idx].type.match(/^image\//))) {
-			 file = files[idx];
-			 break;
+		   var dt = e.dataTransfer;
+		   var files = dt.files;
+		   var file;
+		   
+		   for (var idx = 0; idx < files.length; idx++) {
+			 if (!!(files[idx].type.match(/^image\//))) {
+			   file = files[idx];
+			   break;
+			 }
+		   }
+		   
+		   if (file) {
+			 fr.readAsDataURL(file);
+		   }
+		   else {
+			 // Well, that didn't work. Make sure you choose an image file like a JPG, PNG or GIF.
 		   }
 		 }
+	   };
 
-		 if (file) {
-		   fr.readAsDataURL(file);
-		 }
-		 else {
-		   // Well, that didn't work. Make sure you choose an image file like a JPG, PNG or GIF.
-		 }
-		 
-	   }, false);
+	   document.addEventListener("drop", self.drop, false);
 	   
 	   var slider = that.$.slider;
 	   var canvas = that.$.canvas;
@@ -387,6 +369,8 @@ Element providing solution to no problem in particular.
 	   ready: function() {
 
 		 this.dragging = false;
+
+		 this.dropzone = this.dropzone || this;
 		 
 		 var _edit = new _ready(this);
 		 this.pan = _edit.pan;
@@ -394,6 +378,11 @@ Element providing solution to no problem in particular.
 		 this.pinch = _edit.pinch;
 		 this.pinchend = _edit.pinchend;
 		 this.change = _edit.change;
+
+		 this.detached = function() {
+		   document.removeEventListener('drop',_edit.drop);
+		   document.removeEventListener('dragenter',_edit.dragenter);
+		 }
 	   },
 
 	   outputheightChanged: function() {
