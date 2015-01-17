@@ -55,13 +55,14 @@ Element providing solution to no problem in particular.
 		<div>OR</div>
 		<span relative>
 		  <input id="input" class="hidden-input" type="file" on-change="{{ change }}" title="Select an image from your computer" accept="image/*" />
+		  <!-- remove tabindex from dummy button -->
 		  <paper-button tabindex?="[[0]]" aria-hidden="true" class="hidden-input-button">Select an image from your computer</paper-button>
 		</span>
 	  </div>
   
 	</div>
 
-	<span hidden?={{ !dragging }}>
+	<span hidden>
 	  <canvas id="canvas_scaled" on-down="{{ pan }}"></canvas>
 	  <canvas style="" id="canvas_square" height="{{ outputheight }}" width="{{ outputwidth }}"></canvas>
 	  <canvas id="canvas"></canvas>
@@ -122,13 +123,31 @@ Element providing solution to no problem in particular.
 
 		 console.log(e);
 
-		 if (e.target == that.dropzone) {
-		   var dt = e.dataTransfer;
-		   var files = dt.files;
+		 var dt = e.dataTransfer;
+		 var files = dt.files;
+
+		 files.filter(function(element) {
+
+		   return !!(element.type.match(/^image\//));
 		   
-		   console.log(files);
+		 });
+
+		 switch(files.length) {
+			 case 0:
+
+			 // Well, that didn't work. Make sure you choose an image file like a JPG, PNG or GIF.
+				break;
+			 case 1:
+
+			 fr.readAsDataURL(files[0]);
+			 
+			 break;
+		   default:
+			 // Whoa, that's too many files. We'll just use one.
 		 }
 		 
+		 console.log(files);
+		 		 
 		 e.preventDefault();
 		 e.stopPropagation();
 		 
@@ -313,12 +332,11 @@ Element providing solution to no problem in particular.
 	   /**
 		* The `author` attribute sets an initial author
 		*
-		* @attribute author
+		* @property author
 		* @type string
 		* @default 'Daniel Gleckler'
 		*/
-	   get author() { return 'Daniel Gleckler' },
-	   set author(v) { return false },
+	   author: 'Daniel Gleckler',
 
 	   publish: {
 		 user: {
@@ -331,9 +349,9 @@ Element providing solution to no problem in particular.
 		*
 		* @attribute outputwidth
 		* @type string
-		* @default 210
+		* @default 280
 		*/
-	   outputwidth: 210,
+	   outputwidth: 280,
 
 	   /**
 		* The `outputheight` attribute sets the height of the outputted to the `imagedata attribute.

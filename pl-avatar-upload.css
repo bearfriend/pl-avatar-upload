@@ -5,10 +5,10 @@
 #image {
 	background: url(images/placeholder.png) center center no-repeat #f5f5f5;
 	background-size: contain;
-	
+	cursor: move;
 	border: 1px solid #ccc;
 	height:280px;
-	width:210px;
+	width:280px;
 	-webkit-user-drag: none;
 	-webkit-user-select: none;
 	-moz-user-select: none;
