@@ -85,15 +85,9 @@ Element providing solution to no problem in particular.
 	   mc.on('pinchend',function() {
 
 		 pinchStartWidth = canvasSquare.width;
-		 console.log('End: '+pinchStartWidth);
 	   });
 	   
 	   mc.on('pinchin pinchout',function(e) {
-
-		 //console.log(e);
-
-		 //var originalDistance = distance*e.scale;
-		 
 		 self.zoom(null,1/e.scale);
 	   });
 	   
@@ -104,8 +98,6 @@ Element providing solution to no problem in particular.
 	   
 	   document.addEventListener("dragenter", function(e) {
 
-		 console.log(e);
-		 
 		 if (!that.hidden) {
 
 		   that.dragging = true;
@@ -121,11 +113,13 @@ Element providing solution to no problem in particular.
 	   }, false);
 	   document.addEventListener("drop", function(e) {
 
-		 console.log(e);
+		 e.preventDefault();
 
 		 var dt = e.dataTransfer;
 		 var files = dt.files;
+		 var file;
 
+		 /*
 		 files.filter(function(element) {
 
 		   return !!(element.type.match(/^image\//));
@@ -135,7 +129,7 @@ Element providing solution to no problem in particular.
 		 switch(files.length) {
 			 case 0:
 
-			 // Well, that didn't work. Make sure you choose an image file like a JPG, PNG or GIF.
+			// Well, that didn't work. Make sure you choose an image file like a JPG, PNG or GIF.
 				break;
 			 case 1:
 
@@ -145,11 +139,21 @@ Element providing solution to no problem in particular.
 		   default:
 			 // Whoa, that's too many files. We'll just use one.
 		 }
-		 
-		 console.log(files);
-		 		 
-		 e.preventDefault();
-		 e.stopPropagation();
+		  */
+
+		 for (var idx = 0; idx < files.length; idx++) {
+		   if (!!(files[idx].type.match(/^image\//))) {
+			 file = files[idx];
+			 break;
+		   }
+		 }
+
+		 if (file) {
+		   fr.readAsDataURL(file);
+		 }
+		 else {
+		   // Well, that didn't work. Make sure you choose an image file like a JPG, PNG or GIF.
+		 }
 		 
 	   }, false);
 	   
@@ -274,8 +278,6 @@ Element providing solution to no problem in particular.
 
 	   self.zoom = function(e,pinchValue) {
 		 
-		 console.log('In/Out: '+pinchStartWidth);
-		 
 		 canvasSquare.width = pinchValue ? Math.max(slider.max*-1,Math.min(slider.min*-1,pinchStartWidth*pinchValue)) : Math.round(slider.value*-1);
 		 canvasSquare.height = canvasSquare.width*ratio;
 		 
@@ -323,6 +325,12 @@ Element providing solution to no problem in particular.
 		 that.imagedata = canvasScaled.toDataURL('image/jpeg',.8);
 
 		 img2.src = that.imagedata;
+		 
+	   };
+
+	   img2.onload = function() {
+
+		 that.fire('valid');
 		 
 	   };
 	   
