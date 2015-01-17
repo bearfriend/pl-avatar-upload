@@ -2,7 +2,10 @@
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-slider/paper-slider.html">
 <link rel="import" href="../core-style/core-style.html">
+<link rel="import" href="../core-ajax/core-ajax.html">
 
+<!-- Eventually, we should probably establish a convention, and move this to an import -->
+<script src="../hammerjs/hammer.min.js"></script>
 
 <!--
 Element providing solution to no problem in particular.
@@ -30,16 +33,18 @@ Element providing solution to no problem in particular.
 </style>
 
 
-<polymer-element name="pl-avatar-upload" attributes="author outputwidth outputheight">
+<polymer-element name="pl-avatar-upload" attributes="author outputwidth outputheight user">
   
   <template>
 	
     <link rel="stylesheet" href="pl-avatar-upload.css" />
+
+	<core-ajax id="ajaxSave" url="http://54.84.119.67:1337/api/users/{{ user.id }}" method="POST" handleAs="json" params='{"image": "{{ imagedata }}" }' withCredentials></core-ajax>
 	
 	<div layout horizontal>
 	  <div id="image-container" layout vertical>
 		<img id="image" on-down="{{ pan }}" />
-		<input type="range" id="slider" min="0" max="90" value="75" step="any" on-input="{{ zoom }}" block />
+		<input hidden type="range" id="slider" min="0" max="90" value="75" step="any" on-input="{{ zoom }}" block />
 		<!--<paper-slider id="slider" min="0" max="90" value="75" step="any" on-input="{{ drawImg }}"></paper-slider>-->
 	  </div>
 	  <div flex center layout vertical>
@@ -48,15 +53,15 @@ Element providing solution to no problem in particular.
 
 		<div id="drop-zone">Drag and drop an image</div>
 		<div>OR</div>
-		<span class="hidden-input-container" relative>
-		  <input id="input" class="hidden-input" type="file" on-change="{{ change }}" accept="image/*" />
-		  <paper-button tabindex="-1" aria-hidden="true" class="hidden-input-button">Select an image from your computer</paper-button>
+		<span relative>
+		  <input id="input" class="hidden-input" type="file" on-change="{{ change }}" title="Select an image from your computer" accept="image/*" />
+		  <paper-button tabindex?="[[0]]" aria-hidden="true" class="hidden-input-button">Select an image from your computer</paper-button>
 		</span>
 	  </div>
   
 	</div>
 
-	<span hidden>
+	<span hidden?={{ !dragging }}>
 	  <canvas id="canvas_scaled" on-down="{{ pan }}"></canvas>
 	  <canvas style="" id="canvas_square" height="{{ outputheight }}" width="{{ outputwidth }}"></canvas>
 	  <canvas id="canvas"></canvas>
@@ -72,6 +77,63 @@ Element providing solution to no problem in particular.
 
 	   var self = this;
 	   
+	   // set up pinch to zoom
+	   var mc = new Hammer(that.$.image);
+	   mc.get('pinch').set({ enable: true });
+
+	   mc.on('pinchend',function() {
+
+		 pinchStartWidth = canvasSquare.width;
+		 console.log('End: '+pinchStartWidth);
+	   });
+	   
+	   mc.on('pinchin pinchout',function(e) {
+
+		 //console.log(e);
+
+		 //var originalDistance = distance*e.scale;
+		 
+		 self.zoom(null,1/e.scale);
+	   });
+	   
+	   // set up drg and drop
+	   document.addEventListener("dragover", function(e) {
+		 e.preventDefault(); // always do this
+	   }, false);
+	   
+	   document.addEventListener("dragenter", function(e) {
+
+		 console.log(e);
+		 
+		 if (!that.hidden) {
+
+		   that.dragging = true;
+		   
+		 }
+
+		 if (e.target == that) {
+		   that.dragenter = true;
+		 }
+
+		 e.preventDefault();
+		 
+	   }, false);
+	   document.addEventListener("drop", function(e) {
+
+		 console.log(e);
+
+		 if (e.target == that.dropzone) {
+		   var dt = e.dataTransfer;
+		   var files = dt.files;
+		   
+		   console.log(files);
+		 }
+		 
+		 e.preventDefault();
+		 e.stopPropagation();
+		 
+	   }, false);
+	   
 	   var slider = that.$.slider;
 	   var canvas = that.$.canvas;
 	   var canvasSquare = that.$.canvas_square;
@@ -82,6 +144,8 @@ Element providing solution to no problem in particular.
 	   var width = that.outputwidth;
 	   var height = that.outputheight;
 	   var ratio = height/width;
+
+	   var pinchStartWidth = canvasSquare.width;
 	   
 	   //canvasScaled.width = width;
 	   //canvasScaled.height = height;
@@ -100,7 +164,12 @@ Element providing solution to no problem in particular.
 	   };
 	   
 	   img.onload = function() {
-	     var ratio2 = img.height/img.width;
+
+		 img.loaded = true;
+		 
+		 that.$.slider.removeAttribute('hidden');
+
+		 var ratio2 = img.height/img.width;
 	     canvas.width = img.width;
 		 while (canvas.width > 2000) {
 		   canvas.width = canvas.width*.5;
@@ -128,6 +197,10 @@ Element providing solution to no problem in particular.
 
 	   self.pan = function(e) {
 
+		 if (!img.loaded) {
+		   return;
+		 }
+		 
 		 document.body.className = "noselect";
 
 		 var previousX = e.clientX;
@@ -180,11 +253,13 @@ Element providing solution to no problem in particular.
 		 fr.readAsDataURL(input.files[0]);
 	   };
 
-	   self.zoom = function() {
+	   self.zoom = function(e,pinchValue) {
 		 
-		 canvasSquare.width = Math.round(slider.value*-1);
+		 console.log('In/Out: '+pinchStartWidth);
+		 
+		 canvasSquare.width = pinchValue ? Math.max(slider.max*-1,Math.min(slider.min*-1,pinchStartWidth*pinchValue)) : Math.round(slider.value*-1);
 		 canvasSquare.height = canvasSquare.width*ratio;
-
+		 
 		 // don't allow x or y to go outside the image dimensions
 		 x = Math.max(Math.min(canvasSquare.width*-.5,x),(canvasSquare.width*.5)-canvas.width);
 		 y = Math.max(Math.min(canvasSquare.height*-.5,y),(canvasSquare.height*.5)-canvas.height);
@@ -245,7 +320,12 @@ Element providing solution to no problem in particular.
 	   get author() { return 'Daniel Gleckler' },
 	   set author(v) { return false },
 
-
+	   publish: {
+		 user: {
+		   id: 0
+		 }
+	   },
+	   
 	   /**
 		* The `outputwidth` attribute sets the width of the image outputted to the `imagedata` attribute.
 		*
@@ -271,11 +351,25 @@ Element providing solution to no problem in particular.
 		* @type string
 		* @default 280
 		*/
+
+
+	   /**
+		* The `save` method sends the `imagedata` to the server, where it will overwrite the user's existing profile image.
+		*
+		* @method save
+		*/
+	   save: function(e) {
+		 this.$.ajaxSave.go();
+	   },
+
+	   saveSuccess: function(response) {
+		 
+	   },
 	   
 	   ready: function() {
-		 // Ready is a lifecycle callback.
-					   // You can do setup work in here.
-					   // More info: http://www.polymer-project.org/docs/polymer/polymer.html#lifecyclemethods
+
+		 this.dragging = false;
+		 
 		 var _edit = new _ready(this);
 		 this.pan = _edit.pan;
 		 this.zoom = _edit.zoom;
@@ -287,7 +381,7 @@ Element providing solution to no problem in particular.
 	   },
 
 	   outputwidthChanged: function() {
-		 //this.ready();
+		 this.ready();
 	   }
 	   
      });

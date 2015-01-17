@@ -12,7 +12,9 @@
     "paper-button": "Polymer/paper-button#~0.5.1",
     "paper-slider": "Polymer/paper-slider#~0.5.1",
     "pl-config": "https://github.com/bearfriend/pl-config.git",
-    "core-style": "Polymer/core-style#~0.5.1"
+    "core-style": "Polymer/core-style#~0.5.1",
+    "core-ajax": "Polymer/core-ajax#~0.5.1",
+    "hammerjs": "~2.0.4"
   },
   "devDependencies": {
     "polymer-test-tools": "Polymer/web-component-tester#^0.5.1"
