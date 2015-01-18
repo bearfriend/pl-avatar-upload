@@ -407,15 +407,15 @@ Element providing solution to no problem in particular.
 		 this.change = _edit.change;
 
 		 this.attached = function() {
-		   document.addEventListener("dragover", _edit.dragover, false);
-		   document.addEventListener("dragenter", _edit.dragenter, false);
-		   document.addEventListener("drop", _edit.drop, false);
+		   this.dropzone.addEventListener("dragover", _edit.dragover, false);
+		   this.dropzone.addEventListener("dragenter", _edit.dragenter, false);
+		   this.dropzone.addEventListener("drop", _edit.drop, false);
 		 };
 		 
 		 this.detached = function() {
-		   document.removeEventListener('drop',_edit.drop);
-		   document.removeEventListener('dragenter',_edit.dragenter);
-		   document.removeEventListener('dragover',_edit.dragover);
+		   this.dropzone.removeEventListener('drop',_edit.drop);
+		   this.dropzone.removeEventListener('dragenter',_edit.dragenter);
+		   this.dropzone.removeEventListener('dragover',_edit.dragover);
 		 };
 	   },
 
