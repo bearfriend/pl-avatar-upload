@@ -3,6 +3,7 @@
 <link rel="import" href="../paper-slider/paper-slider.html">
 <link rel="import" href="../core-style/core-style.html">
 <link rel="import" href="../core-ajax/core-ajax.html">
+<link rel="import" href="../paper-progress/paper-progress.html">
 
 <!--
 Element providing solution to no problem in particular.
@@ -36,11 +37,21 @@ Element providing solution to no problem in particular.
 	
     <link rel="stylesheet" href="pl-avatar-upload.css" />
 
-	<core-ajax id="ajaxSave" url="http://54.84.119.67:1337/api/users/{{ user.id }}" method="POST" handleAs="json" params='{"image": "{{ imagedata }}" }' withCredentials></core-ajax>
+	<core-ajax id="ajaxSave" url="http://54.84.119.67:1337/api/users/{{ user.id }}" method="POST" handleAs="json" params='{"image": "{{ imagedata }}" }' withCredentials on-core-complete="{{ saveSuccess }}" on-core-error="{{ saveFail }}"></core-ajax>
 	
 	<div layout horizontal>
 	  <div id="image-container" layout vertical>
-		<img id="image" on-down="{{ pan }}" on-pinch="{{ pinch }}" on-pinchend="{{ pinchend }}" />
+		<span relative>
+		  <img id="image" on-down="{{ pan }}" on-pinch="{{ pinch }}" on-pinchend="{{ pinchend }}" />
+		  <template bind id="progress-template">
+			<div id="progress" hidden fit layout vertical center justified>
+			  <div>Uploading your image</div>
+			  <paper-progress id="progress-bar" value="{{ loaded/total }}"></paper-progress>
+			  <div id="progress-total">
+				<div style="width: {{ loaded/total }}%" id="progress-loaded"></div>
+			  </div>
+			</div>
+		  </template>
 		<input hidden type="range" id="slider" min="0" max="90" value="75" step="any" on-input="{{ zoom }}" block />
 		<!--<paper-slider id="slider" min="0" max="90" value="75" step="any" on-input="{{ drawImg }}"></paper-slider>-->
 	  </div>
@@ -85,11 +96,17 @@ Element providing solution to no problem in particular.
 	   
 	   // set up drg and drop
 
+	   self.dragover = function(e) {
+		  e.preventDefault(); // always do this
+	   }
+	   
+	   document.addEventListener("dragover", self.dragover, false);
+	   
 	   self.dragenter = function(e) {
 
-		 /*
 		 e.preventDefault();
-
+		 
+		 /*
 		 if (!that.hidden) {
 		   that.dragging = true;
 		 }
@@ -100,7 +117,7 @@ Element providing solution to no problem in particular.
 		 */
 		 
 	   };
-
+	   
 	   document.addEventListener("dragenter", self.dragenter, false);
 	   
 	   self.drop = function(e) {
@@ -124,7 +141,7 @@ Element providing solution to no problem in particular.
 			 fr.readAsDataURL(file);
 		   }
 		   else {
-			 // Well, that didn't work. Make sure you choose an image file like a JPG, PNG or GIF.
+			 that.fire('selectionerror',{ message: "Well, that didn't work. Make sure you choose an image file like a JPG, PNG or GIF."});
 		   }
 		 }
 	   };
@@ -349,9 +366,17 @@ Element providing solution to no problem in particular.
 		*
 		* @property imagedata
 		* @type string
-		* @default 280
+		* @default ''
 		*/
+	   imagedata: '',
 
+	   /**
+		* The `dropzone` property specifies an element where a dropped file will loaded into the editor.
+		*
+		* @property dropzone
+		* @type HTMLElement
+		* @default pl-avatar-upload (host element)
+		*/
 
 	   /**
 		* The `save` method sends the `imagedata` to the server, where it will overwrite the user's existing profile image.
@@ -360,10 +385,18 @@ Element providing solution to no problem in particular.
 		*/
 	   save: function(e) {
 		 this.$.ajaxSave.go();
+		 this.$['progress-template'].model = this.$.ajaxSave.progress;
+		 this.$.progress.hidden = false;
 	   },
 
 	   saveSuccess: function(response) {
-		 
+		 //this.$.progress.hidden = true;
+		 this.fire('saved');
+	   },
+
+	   saveFail: function(e) {
+		 this.$.progress.hidden = true;
+		 this.fire('saveerror',{ message: "Opps, that didn't work. Please try uploading the file again" });
 	   },
 	   
 	   ready: function() {
@@ -382,6 +415,7 @@ Element providing solution to no problem in particular.
 		 this.detached = function() {
 		   document.removeEventListener('drop',_edit.drop);
 		   document.removeEventListener('dragenter',_edit.dragenter);
+		   document.removeEventListener('dragover',_edit.dragover);
 		 }
 	   },
 

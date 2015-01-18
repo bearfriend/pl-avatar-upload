@@ -42,3 +42,20 @@
 	z-index: 1;
 	cursor: pointer;
 }
+
+#progress {
+	background-color: rgba(255,255,255,.8);
+}
+
+/*
+#progress-total {
+	width: 72%;
+	height: .8em;
+	background-color: #ccc;
+}
+
+#progress-loaded {
+	height: 100%;
+	background-color: #3079dd;
+}
+*/
