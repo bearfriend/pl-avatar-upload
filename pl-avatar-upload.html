@@ -100,8 +100,6 @@ Element providing solution to no problem in particular.
 		  e.preventDefault(); // always do this
 	   }
 	   
-	   document.addEventListener("dragover", self.dragover, false);
-	   
 	   self.dragenter = function(e) {
 
 		 e.preventDefault();
@@ -117,8 +115,6 @@ Element providing solution to no problem in particular.
 		 */
 		 
 	   };
-	   
-	   document.addEventListener("dragenter", self.dragenter, false);
 	   
 	   self.drop = function(e) {
 
@@ -145,8 +141,6 @@ Element providing solution to no problem in particular.
 		   }
 		 }
 	   };
-
-	   document.addEventListener("drop", self.drop, false);
 	   
 	   var slider = that.$.slider;
 	   var canvas = that.$.canvas;
@@ -412,11 +406,17 @@ Element providing solution to no problem in particular.
 		 this.pinchend = _edit.pinchend;
 		 this.change = _edit.change;
 
+		 this.attached = function() {
+		   document.addEventListener("dragover", _edit.dragover, false);
+		   document.addEventListener("dragenter", _edit.dragenter, false);
+		   document.addEventListener("drop", _edit.drop, false);
+		 };
+		 
 		 this.detached = function() {
 		   document.removeEventListener('drop',_edit.drop);
 		   document.removeEventListener('dragenter',_edit.dragenter);
 		   document.removeEventListener('dragover',_edit.dragover);
-		 }
+		 };
 	   },
 
 	   outputheightChanged: function() {
