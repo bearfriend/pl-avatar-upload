@@ -118,7 +118,7 @@ Element providing solution to no problem in particular.
 	   
 	   self.drop = function(e) {
 
-		 if (e.target == that.dropzone) {
+		 if (e.currentTarget == that.dropzone) {
 		 
 		   e.preventDefault();
 		   
@@ -392,6 +392,13 @@ Element providing solution to no problem in particular.
 		 this.$.progress.hidden = true;
 		 this.fire('saveerror',{ message: "Opps, that didn't work. Please try uploading the file again" });
 	   },
+
+	   dropzoneChanged: function(oldValue,newValue) {
+		 if (oldValue) {
+		   this.detached(oldValue);
+		 }
+		 this.attached();
+	   },
 	   
 	   ready: function() {
 
@@ -407,15 +414,20 @@ Element providing solution to no problem in particular.
 		 this.change = _edit.change;
 
 		 this.attached = function() {
-		   this.dropzone.addEventListener("dragover", _edit.dragover, false);
-		   this.dropzone.addEventListener("dragenter", _edit.dragenter, false);
-		   this.dropzone.addEventListener("drop", _edit.drop, false);
+		   if (this.dropzone) {
+			 this.dropzone.addEventListener("dragover", _edit.dragover, false);
+			 this.dropzone.addEventListener("dragenter", _edit.dragenter, false);
+			 this.dropzone.addEventListener("drop", _edit.drop, false);
+		   }
 		 };
 		 
-		 this.detached = function() {
-		   this.dropzone.removeEventListener('drop',_edit.drop);
-		   this.dropzone.removeEventListener('dragenter',_edit.dragenter);
-		   this.dropzone.removeEventListener('dragover',_edit.dragover);
+		 this.detached = function(dz) {
+		   dz = dz || this.dropzone;
+		   if (dz) {
+			 dz.removeEventListener('drop',_edit.drop);
+			 dz.removeEventListener('dragenter',_edit.dragenter);
+			 dz.removeEventListener('dragover',_edit.dragover);
+		   }
 		 };
 	   },
 
