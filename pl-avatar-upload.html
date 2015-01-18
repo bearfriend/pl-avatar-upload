@@ -403,8 +403,6 @@ Element providing solution to no problem in particular.
 	   ready: function() {
 
 		 this.dragging = false;
-
-		 this.dropzone = this.dropzone || this;
 		 
 		 var _edit = new _ready(this);
 		 this.pan = _edit.pan;
@@ -414,7 +412,11 @@ Element providing solution to no problem in particular.
 		 this.change = _edit.change;
 
 		 this.attached = function() {
-		   if (this.dropzone) {
+
+		   if (!this.dropzone) {
+			 this.dropzone = this;
+		   } 
+		   else {
 			 this.dropzone.addEventListener("dragover", _edit.dragover, false);
 			 this.dropzone.addEventListener("dragenter", _edit.dragenter, false);
 			 this.dropzone.addEventListener("drop", _edit.drop, false);
